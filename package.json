@@ -5,10 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "cnpm i",
-    "build": "npm run buildFiles & npm run buildDirs",
-    "buildFiles": "babel builder.js index.js crypto.js --out-file builder.js index.js crypto.js",
-    "buildDirs": "babel util chains --out-dir util chains"
+    "build": "npm run buildBuilder & npm run buildCrypto & npm run buildUtil & npm run buildChains",
+    "buildBuilder": "babel builder.js --out-file builder.js",
+    "buildCrypto": "babel crypto.js --out-file crypto.js",
+    "buildUtil": "babel util --out-dir util",
+    "buildChains": "babel chains --out-dir chains",
   },
   "repository": {
     "type": "git",
