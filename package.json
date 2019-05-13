@@ -9,7 +9,7 @@
     "buildBuilder": "babel builder.js --out-file builder.js",
     "buildCrypto": "babel crypto.js --out-file crypto.js",
     "buildUtil": "babel util --out-dir util",
-    "buildChains": "babel chains --out-dir chains",
+    "buildChains": "babel chains --out-dir chains"
   },
   "repository": {
     "type": "git",
