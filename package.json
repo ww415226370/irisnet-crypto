@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "echo \"呵呵额赫尔\"",
+    "postinstall": "cnpm i",
     "build": "npm run buildFiles & npm run buildDirs",
     "buildFiles": "babel builder.js index.js crypto.js --out-file builder.js index.js crypto.js",
     "buildDirs": "babel util chains --out-dir util chains"
