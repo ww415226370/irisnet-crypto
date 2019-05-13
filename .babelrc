@@ -1,0 +1,17 @@
+{
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "forceAllTransforms": true,
+        "useBuiltIns": "usage"
+      }
+    ]
+  ],
+  "plugins": [
+    [
+      "@babel/plugin-transform-runtime",
+      { corejs: 2 }
+    ]
+  ]
+}
