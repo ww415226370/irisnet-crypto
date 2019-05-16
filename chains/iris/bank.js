@@ -1,306 +1,407 @@
 'use strict';
 
-const Utils = require('../../util/utils');
-const Codec = require('../../util/codec');
-const Config = require('../../config');
-const Builder = require("../../builder");
-const Amino = require("./amino");
-const TxSerializer = require("./tx/tx_serializer");
-const Base64 = require('base64-node');
+var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
 
-class Coin{
-    constructor(amount, denom) {
-        this.denom = denom;
-        this.amount = amount;
+require("core-js/modules/es6.regexp.to-string");
+
+require("core-js/modules/es6.date.to-string");
+
+require("core-js/modules/es6.object.to-string");
+
+require("core-js/modules/es6.array.for-each");
+
+var _createClass2 = _interopRequireDefault(require("@babel/runtime-corejs2/helpers/createClass"));
+
+var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime-corejs2/helpers/possibleConstructorReturn"));
+
+var _getPrototypeOf2 = _interopRequireDefault(require("@babel/runtime-corejs2/helpers/getPrototypeOf"));
+
+var _inherits2 = _interopRequireDefault(require("@babel/runtime-corejs2/helpers/inherits"));
+
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime-corejs2/helpers/classCallCheck"));
+
+var Utils = require('../../util/utils');
+
+var Codec = require('../../util/codec');
+
+var Config = require('../../config');
+
+var Builder = require("../../builder");
+
+var Amino = require("./amino");
+
+var TxSerializer = require("./tx/tx_serializer");
+
+var Base64 = require('base64-node');
+
+var Coin = function Coin(amount, denom) {
+  (0, _classCallCheck2["default"])(this, Coin);
+  this.denom = denom;
+  this.amount = amount;
+};
+
+var Input =
+/*#__PURE__*/
+function (_Builder$Validator) {
+  (0, _inherits2["default"])(Input, _Builder$Validator);
+
+  function Input(address, coins) {
+    var _this;
+
+    (0, _classCallCheck2["default"])(this, Input);
+    _this = (0, _possibleConstructorReturn2["default"])(this, (0, _getPrototypeOf2["default"])(Input).call(this));
+    _this.address = address;
+    _this.coins = coins;
+    return _this;
+  }
+
+  (0, _createClass2["default"])(Input, [{
+    key: "GetSignBytes",
+    value: function GetSignBytes() {
+      var msg = {
+        "address": this.address,
+        "coins": this.coins
+      };
+      return Utils.sortObjectKeys(msg);
     }
-}
+  }, {
+    key: "ValidateBasic",
+    value: function ValidateBasic() {
+      if (Utils.isEmpty(this.address)) {
+        throw new Error("address is empty");
+      }
 
-class Input extends Builder.Validator {
-    constructor(address, coins) {
-        super();
-        this.address = address;
-        this.coins = coins;
+      if (Utils.isEmpty(this.coins)) {
+        throw new Error("coins is empty");
+      }
+    }
+  }]);
+  return Input;
+}(Builder.Validator);
+
+var Output =
+/*#__PURE__*/
+function (_Builder$Validator2) {
+  (0, _inherits2["default"])(Output, _Builder$Validator2);
+
+  function Output(address, coins) {
+    var _this2;
+
+    (0, _classCallCheck2["default"])(this, Output);
+    _this2 = (0, _possibleConstructorReturn2["default"])(this, (0, _getPrototypeOf2["default"])(Output).call(this));
+    _this2.address = address;
+    _this2.coins = coins;
+    return _this2;
+  }
+
+  (0, _createClass2["default"])(Output, [{
+    key: "GetSignBytes",
+    value: function GetSignBytes() {
+      var msg = {
+        "address": this.address,
+        "coins": this.coins
+      };
+      return Utils.sortObjectKeys(msg);
+    }
+  }, {
+    key: "ValidateBasic",
+    value: function ValidateBasic() {
+      if (Utils.isEmpty(this.address)) {
+        throw new Error("address is empty");
+      }
+
+      if (Utils.isEmpty(this.coins)) {
+        throw new Error("coins is empty");
+      }
+    }
+  }]);
+  return Output;
+}(Builder.Validator);
+
+var MsgSend =
+/*#__PURE__*/
+function (_Builder$Msg) {
+  (0, _inherits2["default"])(MsgSend, _Builder$Msg);
+
+  function MsgSend(from, to, coins) {
+    var _this3;
+
+    (0, _classCallCheck2["default"])(this, MsgSend);
+    _this3 = (0, _possibleConstructorReturn2["default"])(this, (0, _getPrototypeOf2["default"])(MsgSend).call(this, Config.iris.tx.transfer.prefix));
+    _this3.inputs = [new Input(from, coins)];
+    _this3.outputs = [new Output(to, coins)];
+    return _this3;
+  }
+
+  (0, _createClass2["default"])(MsgSend, [{
+    key: "GetSignBytes",
+    value: function GetSignBytes() {
+      var inputs = [];
+      var outputs = [];
+      this.inputs.forEach(function (item) {
+        inputs.push(item.GetSignBytes());
+      });
+      this.outputs.forEach(function (item) {
+        outputs.push(item.GetSignBytes());
+      });
+      var msg = {
+        "inputs": inputs,
+        "outputs": outputs
+      };
+      return Utils.sortObjectKeys(msg);
+    }
+  }, {
+    key: "ValidateBasic",
+    value: function ValidateBasic() {
+      if (Utils.isEmpty(this.inputs)) {
+        throw new Error("sender is  empty");
+      }
+
+      if (Utils.isEmpty(this.outputs)) {
+        throw new Error("sender is  empty");
+      }
+
+      this.inputs.forEach(function (input) {
+        input.ValidateBasic();
+      });
+      this.outputs.forEach(function (output) {
+        output.ValidateBasic();
+      });
+    }
+  }, {
+    key: "Type",
+    value: function Type() {
+      return Config.iris.tx.transfer.prefix;
+    }
+  }, {
+    key: "GetMsg",
+    value: function GetMsg() {
+      var inputs = [];
+      var outputs = [];
+      this.inputs.forEach(function (item) {
+        var BECH32 = require('bech32');
+
+        var ownKey = BECH32.decode(item.address);
+        var addrHex = BECH32.fromWords(ownKey.words);
+        inputs.push({
+          address: addrHex,
+          coins: item.coins
+        });
+      });
+      this.outputs.forEach(function (item) {
+        var BECH32 = require('bech32');
+
+        var ownKey = BECH32.decode(item.address);
+        var addrHex = BECH32.fromWords(ownKey.words);
+        outputs.push({
+          address: addrHex,
+          coins: item.coins
+        });
+      });
+      return {
+        input: inputs,
+        output: outputs
+      };
+    }
+  }, {
+    key: "GetDisplayContent",
+    value: function GetDisplayContent() {
+      return {
+        i18n_tx_type: "i18n_transfer",
+        i18n_from: this.inputs[0].address,
+        i18n_to: this.outputs[0].address,
+        i18n_amount: this.outputs[0].coins
+      };
+    }
+  }]);
+  return MsgSend;
+}(Builder.Msg);
+
+var StdFee =
+/*#__PURE__*/
+function () {
+  function StdFee(amount, gas) {
+    (0, _classCallCheck2["default"])(this, StdFee);
+    this.amount = amount;
+
+    if (!gas) {
+      gas = Config.iris.maxGas;
     }
 
-    GetSignBytes() {
-        let msg = {
-            "address": this.address,
-            "coins": this.coins
+    this.gas = gas;
+  }
+
+  (0, _createClass2["default"])(StdFee, [{
+    key: "GetSignBytes",
+    value: function GetSignBytes() {
+      if (Utils.isEmpty(this.amount)) {
+        this.amount = [new Coin("0", "")];
+      }
+
+      return {
+        amount: this.amount,
+        gas: this.gas
+      };
+    }
+  }]);
+  return StdFee;
+}();
+
+var StdSignMsg =
+/*#__PURE__*/
+function (_Builder$Msg2) {
+  (0, _inherits2["default"])(StdSignMsg, _Builder$Msg2);
+
+  function StdSignMsg(chainID, accnum, sequence, fee, msg, memo, msgType) {
+    var _this4;
+
+    (0, _classCallCheck2["default"])(this, StdSignMsg);
+    _this4 = (0, _possibleConstructorReturn2["default"])(this, (0, _getPrototypeOf2["default"])(StdSignMsg).call(this, msgType));
+    _this4.chain_id = chainID;
+    _this4.account_number = accnum;
+    _this4.sequence = sequence;
+    _this4.fee = fee;
+    _this4.msgs = [msg];
+    _this4.memo = memo;
+    return _this4;
+  }
+
+  (0, _createClass2["default"])(StdSignMsg, [{
+    key: "GetSignBytes",
+    value: function GetSignBytes() {
+      var msgs = [];
+      this.msgs.forEach(function (msg) {
+        msgs.push(msg.GetSignBytes());
+      });
+      var tx = {
+        "account_number": this.account_number,
+        "chain_id": this.chain_id,
+        "fee": this.fee.GetSignBytes(),
+        "memo": this.memo,
+        "msgs": msgs,
+        "sequence": this.sequence
+      };
+      return Utils.sortObjectKeys(tx);
+    }
+  }, {
+    key: "ValidateBasic",
+    value: function ValidateBasic() {
+      if (Utils.isEmpty(this.chain_id)) {
+        throw new Error("chain_id is  empty");
+      }
+
+      if (this.account_number < 0) {
+        throw new Error("account_number is  empty");
+      }
+
+      if (this.sequence < 0) {
+        throw new Error("sequence is  empty");
+      }
+
+      this.msgs.forEach(function (msg) {
+        msg.ValidateBasic();
+      });
+    }
+  }]);
+  return StdSignMsg;
+}(Builder.Msg);
+
+var StdSignature = function StdSignature(pub_key, signature, account_number, sequence) {
+  (0, _classCallCheck2["default"])(this, StdSignature);
+  this.pub_key = pub_key;
+  this.signature = signature;
+  this.account_number = account_number;
+  this.sequence = sequence;
+};
+
+var StdTx =
+/*#__PURE__*/
+function () {
+  function StdTx(properties) {
+    (0, _classCallCheck2["default"])(this, StdTx);
+    this.msgs = properties.msgs;
+    this.fee = properties.fee;
+    this.signatures = null;
+    this.memo = properties.memo;
+    this.signMsg = properties;
+  }
+
+  (0, _createClass2["default"])(StdTx, [{
+    key: "SetSignature",
+    value: function SetSignature(sig) {
+      if (typeof sig === "string") {
+        sig = JSON.parse(sig);
+      }
+
+      var signature = new StdSignature(sig.pub_key, sig.signature, this.signMsg.account_number, this.signMsg.sequence);
+      this.signatures = [signature];
+    }
+  }, {
+    key: "SetPubKey",
+    value: function SetPubKey(pubkey) {
+      if (Codec.Bech32.isBech32(Config.iris.bech32.accPub, pubkey)) {
+        pubkey = Codec.Bech32.fromBech32(pubkey);
+      }
+
+      pubkey = Codec.Hex.hexToBytes(pubkey);
+
+      if (!this.signatures || this.signatures.length == 0) {
+        var signature = {
+          pub_key: pubkey
         };
-        return Utils.sortObjectKeys(msg)
+        this.SetSignature(signature);
+        return;
+      }
+
+      this.signatures[0].pub_key = pubkey;
     }
+  }, {
+    key: "GetData",
+    value: function GetData() {
+      var signatures = [];
 
-    ValidateBasic() {
-        if (Utils.isEmpty(this.address)) {
-            throw new Error("address is empty");
-        }
+      if (this.signatures) {
+        this.signatures.forEach(function (sig) {
+          var publicKey = "";
+          var signature = "";
 
-        if (Utils.isEmpty(this.coins)) {
-            throw new Error("coins is empty");
-        }
-    }
-}
+          if (sig.pub_key.length > 33) {
+            //去掉amino编码前缀
+            publicKey = sig.pub_key.slice(5, sig.pub_key.length);
+          }
 
-class Output extends Builder.Validator {
-    constructor(address, coins) {
-        super();
-        this.address = address;
-        this.coins = coins;
-    }
+          publicKey = Base64.encode(publicKey);
 
-    GetSignBytes() {
-        let msg = {
-            "address": this.address,
-            "coins": this.coins
-        };
-        return Utils.sortObjectKeys(msg)
-    }
+          if (!Utils.isEmpty(sig.signature)) {
+            signature = Base64.encode(sig.signature);
+          }
 
-    ValidateBasic() {
-        if (Utils.isEmpty(this.address)) {
-            throw new Error("address is empty");
-        }
-
-        if (Utils.isEmpty(this.coins)) {
-            throw new Error("coins is empty");
-        }
-    }
-}
-
-class MsgSend extends Builder.Msg {
-    constructor(from, to, coins) {
-        super(Config.iris.tx.transfer.prefix);
-        this.inputs = [new Input(from, coins)];
-        this.outputs = [new Output(to, coins)];
-    }
-
-    GetSignBytes() {
-        let inputs = [];
-        let outputs = [];
-        this.inputs.forEach(function(item) {
-            inputs.push(item.GetSignBytes())
+          signatures.push({
+            pub_key: Amino.MarshalJSON(Config.iris.amino.pubKey, publicKey),
+            signature: signature,
+            account_number: Utils.toString(sig.account_number),
+            sequence: Utils.toString(sig.sequence)
+          });
         });
-        this.outputs.forEach(function(item) {
-            outputs.push(item.GetSignBytes())
-        });
-        let msg = {
-            "inputs": inputs,
-            "outputs": outputs
-        };
+      }
 
-        return Utils.sortObjectKeys(msg);
-    }
-
-    ValidateBasic() {
-        if (Utils.isEmpty(this.inputs)) {
-            throw new Error("sender is  empty");
+      var msgs = [];
+      this.msgs.forEach(function (msg) {
+        msgs.push(Amino.MarshalJSON(msg.type, msg));
+      });
+      var fee = {
+        amount: this.fee.amount,
+        gas: Utils.toString(this.fee.gas)
+      };
+      return {
+        tx: {
+          msg: msgs,
+          fee: fee,
+          signatures: signatures,
+          memo: this.memo
         }
-        if (Utils.isEmpty(this.outputs)) {
-            throw new Error("sender is  empty");
-        }
-
-        this.inputs.forEach(function(input) {
-            input.ValidateBasic();
-        });
-
-        this.outputs.forEach(function(output) {
-            output.ValidateBasic();
-        })
-
+      };
     }
-
-    Type() {
-        return Config.iris.tx.transfer.prefix;
-    }
-
-    GetMsg() {
-        let inputs = [];
-        let outputs = [];
-
-        this.inputs.forEach(function(item) {
-            const BECH32 = require('bech32');
-            let ownKey = BECH32.decode(item.address);
-            let addrHex = BECH32.fromWords(ownKey.words);
-            inputs.push({
-                address: addrHex,
-                coins: item.coins
-            })
-        });
-
-        this.outputs.forEach(function(item) {
-            const BECH32 = require('bech32');
-            let ownKey = BECH32.decode(item.address);
-            let addrHex = BECH32.fromWords(ownKey.words);
-            outputs.push({
-                address: addrHex,
-                coins: item.coins
-            })
-        });
-        return {
-            input: inputs,
-            output: outputs
-        }
-    }
-
-    GetDisplayContent(){
-        return {
-            i18n_tx_type:"i18n_transfer",
-            i18n_from:this.inputs[0].address,
-            i18n_to:this.outputs[0].address,
-            i18n_amount:this.outputs[0].coins,
-        }
-    }
-}
-
-class StdFee {
-    constructor(amount, gas) {
-        this.amount = amount;
-        if (!gas) {
-            gas = Config.iris.maxGas;
-        }
-        this.gas = gas;
-    }
-
-    GetSignBytes() {
-        if (Utils.isEmpty(this.amount)) {
-            this.amount = [new Coin("0", "")]
-        }
-        return {
-            amount: this.amount,
-            gas: this.gas
-        }
-    }
-}
-
-class StdSignMsg extends Builder.Msg {
-    constructor(chainID, accnum, sequence, fee, msg, memo, msgType) {
-        super(msgType);
-        this.chain_id = chainID;
-        this.account_number = accnum;
-        this.sequence = sequence;
-        this.fee = fee;
-        this.msgs = [msg];
-        this.memo = memo;
-    }
-
-    GetSignBytes() {
-        let msgs = [];
-        this.msgs.forEach(function(msg) {
-            msgs.push(msg.GetSignBytes())
-        });
-
-        let tx = {
-            "account_number": this.account_number,
-            "chain_id": this.chain_id,
-            "fee": this.fee.GetSignBytes(),
-            "memo": this.memo,
-            "msgs": msgs,
-            "sequence": this.sequence
-        };
-        return Utils.sortObjectKeys(tx)
-    }
-
-    ValidateBasic() {
-        if (Utils.isEmpty(this.chain_id)) {
-            throw new Error("chain_id is  empty");
-        }
-        if (this.account_number < 0) {
-            throw new Error("account_number is  empty");
-        }
-        if (this.sequence < 0) {
-            throw new Error("sequence is  empty");
-        }
-        this.msgs.forEach(function(msg) {
-            msg.ValidateBasic();
-        });
-    }
-}
-
-class StdSignature {
-    constructor(pub_key, signature, account_number, sequence) {
-        this.pub_key = pub_key;
-        this.signature = signature;
-        this.account_number = account_number;
-        this.sequence = sequence;
-    }
-}
-
-class StdTx {
-    constructor(properties) {
-        this.msgs = properties.msgs;
-        this.fee = properties.fee;
-        this.signatures = null;
-        this.memo = properties.memo;
-        this.signMsg = properties
-    }
-
-    SetSignature(sig){
-        if (typeof sig === "string") {
-            sig = JSON.parse(sig);
-        }
-        let signature = new StdSignature(sig.pub_key,sig.signature,this.signMsg.account_number,this.signMsg.sequence);
-        this.signatures = [signature];
-    }
-
-    SetPubKey(pubkey){
-        if (Codec.Bech32.isBech32(Config.iris.bech32.accPub,pubkey)){
-            pubkey = Codec.Bech32.fromBech32(pubkey);
-        }
-        pubkey = Codec.Hex.hexToBytes(pubkey);
-        if(!this.signatures || this.signatures.length == 0){
-            let signature = {
-                pub_key:pubkey
-            };
-            this.SetSignature(signature);
-            return
-        }
-        this.signatures[0].pub_key = pubkey
-
-    }
-
-    GetData() {
-        let signatures = [];
-        if (this.signatures){
-            this.signatures.forEach(function(sig) {
-                let publicKey = "";
-                let signature = "";
-                if (sig.pub_key.length > 33) {
-                    //去掉amino编码前缀
-                    publicKey = sig.pub_key.slice(5, sig.pub_key.length)
-                }
-                publicKey = Base64.encode(publicKey);
-
-                if (!Utils.isEmpty(sig.signature)) {
-                    signature = Base64.encode(sig.signature);
-                }
-
-                signatures.push({
-                    pub_key: Amino.MarshalJSON(Config.iris.amino.pubKey, publicKey),
-                    signature: signature,
-                    account_number: Utils.toString(sig.account_number),
-                    sequence: Utils.toString(sig.sequence)
-                })
-            });
-        }
-
-        let msgs = [];
-        this.msgs.forEach(function(msg) {
-            msgs.push(Amino.MarshalJSON(msg.type, msg))
-        });
-        let fee = {
-            amount: this.fee.amount,
-            gas: Utils.toString(this.fee.gas)
-        };
-        return {
-            tx: {
-                msg: msgs,
-                fee: fee,
-                signatures: signatures,
-                memo: this.memo
-            }
-        }
-    }
-
     /**
      *  用于计算交易hash和签名后的交易内容(base64编码)
      *
@@ -309,55 +410,77 @@ class StdTx {
      * @returns {{data: *, hash: *}}
      * @constructor
      */
-    Hash() {
-        let result = TxSerializer.encode(this);
-        return {
-            data: Base64.encode(result.data),
-            hash: result.hash
-        }
-    }
 
-    GetSignBytes(){
-        return this.signMsg.GetSignBytes()
+  }, {
+    key: "Hash",
+    value: function Hash() {
+      var result = TxSerializer.encode(this);
+      return {
+        data: Base64.encode(result.data),
+        hash: result.hash
+      };
     }
-
-    GetDisplayContent(){
-        let msg = this.msgs[0];
-        let content = msg.GetDisplayContent();
-        content.i18n_fee = this.fee.amount;
-        return content
+  }, {
+    key: "GetSignBytes",
+    value: function GetSignBytes() {
+      return this.signMsg.GetSignBytes();
     }
-
-}
-
-module.exports = class Bank {
-    static CreateMsgSend(req) {
-        let coins = [];
-        if (!Utils.isEmpty(req.msg.coins)) {
-            req.msg.coins.forEach(function(item) {
-                coins.push({
-                    denom: item.denom,
-                    amount: Utils.toString(item.amount),
-                });
-            });
-        }
-        let msg = new MsgSend(req.from, req.msg.to, coins);
-        return msg
+  }, {
+    key: "GetDisplayContent",
+    value: function GetDisplayContent() {
+      var msg = this.msgs[0];
+      var content = msg.GetDisplayContent();
+      content.i18n_fee = this.fee.amount;
+      return content;
     }
+  }]);
+  return StdTx;
+}();
 
-    static NewStdSignature(pub_key, signature, account_number, sequence) {
-        return new StdSignature(pub_key, signature, account_number, sequence)
-    }
+module.exports =
+/*#__PURE__*/
+function () {
+  function Bank() {
+    (0, _classCallCheck2["default"])(this, Bank);
+  }
 
-    static NewStdTx(properties) {
-        return new StdTx(properties)
-    }
+  (0, _createClass2["default"])(Bank, null, [{
+    key: "CreateMsgSend",
+    value: function CreateMsgSend(req) {
+      var coins = [];
 
-    static NewStdFee(amount, gas) {
-        return new StdFee(amount, gas)
-    }
+      if (!Utils.isEmpty(req.msg.coins)) {
+        req.msg.coins.forEach(function (item) {
+          coins.push({
+            denom: item.denom,
+            amount: Utils.toString(item.amount)
+          });
+        });
+      }
 
-    static NewStdSignMsg(chainID, accnum, sequence, fee, msg, memo, msgType) {
-        return new StdSignMsg(chainID, accnum, sequence, fee, msg, memo, msgType)
+      var msg = new MsgSend(req.from, req.msg.to, coins);
+      return msg;
     }
-};
+  }, {
+    key: "NewStdSignature",
+    value: function NewStdSignature(pub_key, signature, account_number, sequence) {
+      return new StdSignature(pub_key, signature, account_number, sequence);
+    }
+  }, {
+    key: "NewStdTx",
+    value: function NewStdTx(properties) {
+      return new StdTx(properties);
+    }
+  }, {
+    key: "NewStdFee",
+    value: function NewStdFee(amount, gas) {
+      return new StdFee(amount, gas);
+    }
+  }, {
+    key: "NewStdSignMsg",
+    value: function NewStdSignMsg(chainID, accnum, sequence, fee, msg, memo, msgType) {
+      return new StdSignMsg(chainID, accnum, sequence, fee, msg, memo, msgType);
+    }
+  }]);
+  return Bank;
+}();

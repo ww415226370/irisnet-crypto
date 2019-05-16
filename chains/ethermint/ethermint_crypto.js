@@ -1,36 +1,65 @@
 'use strict';
-const Crypto = require("../../crypto");
-const Old = require('old');
-const EthermintKeypair = require('./ethermint_keypair');
 
-class EthermintCrypto extends Crypto {
-    constructor() {
-        super()
-    }
+var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
 
-    create(language) {
-        throw new Error("not implement");
-    }
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime-corejs2/helpers/classCallCheck"));
 
-    recover(seedphrase, language) {
-        throw new Error("not implement");
-    }
+var _createClass2 = _interopRequireDefault(require("@babel/runtime-corejs2/helpers/createClass"));
 
-    import(secret) {
-        return EthermintKeypair.Import(secret);
-    }
+var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime-corejs2/helpers/possibleConstructorReturn"));
 
-    isValidAddress(address) {
-        return EthermintKeypair.isValidAddress(address);
-    }
+var _getPrototypeOf2 = _interopRequireDefault(require("@babel/runtime-corejs2/helpers/getPrototypeOf"));
 
-    isValidPrivate(privateKey) {
-        return EthermintKeypair.isValidPrivate(new Buffer(Hex.hexToBytes(privateKey)));
-    }
+var _inherits2 = _interopRequireDefault(require("@babel/runtime-corejs2/helpers/inherits"));
 
-    getAddress(publicKey) {
-        return EthermintKeypair.getAddress(publicKey);
+var Crypto = require("../../crypto");
+
+var Old = require('old');
+
+var EthermintKeypair = require('./ethermint_keypair');
+
+var EthermintCrypto =
+/*#__PURE__*/
+function (_Crypto) {
+  (0, _inherits2["default"])(EthermintCrypto, _Crypto);
+
+  function EthermintCrypto() {
+    (0, _classCallCheck2["default"])(this, EthermintCrypto);
+    return (0, _possibleConstructorReturn2["default"])(this, (0, _getPrototypeOf2["default"])(EthermintCrypto).call(this));
+  }
+
+  (0, _createClass2["default"])(EthermintCrypto, [{
+    key: "create",
+    value: function create(language) {
+      throw new Error("not implement");
     }
-}
+  }, {
+    key: "recover",
+    value: function recover(seedphrase, language) {
+      throw new Error("not implement");
+    }
+  }, {
+    key: "import",
+    value: function _import(secret) {
+      return EthermintKeypair.Import(secret);
+    }
+  }, {
+    key: "isValidAddress",
+    value: function isValidAddress(address) {
+      return EthermintKeypair.isValidAddress(address);
+    }
+  }, {
+    key: "isValidPrivate",
+    value: function isValidPrivate(privateKey) {
+      return EthermintKeypair.isValidPrivate(new Buffer(Hex.hexToBytes(privateKey)));
+    }
+  }, {
+    key: "getAddress",
+    value: function getAddress(publicKey) {
+      return EthermintKeypair.getAddress(publicKey);
+    }
+  }]);
+  return EthermintCrypto;
+}(Crypto);
 
 module.exports = Old(EthermintCrypto);

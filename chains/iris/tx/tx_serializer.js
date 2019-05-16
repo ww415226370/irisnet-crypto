@@ -1,7 +1,18 @@
-const root = require('./tx');
-const amino = require('../amino');
-const config = require('../../../config');
+"use strict";
 
+var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
+
+var _stringify = _interopRequireDefault(require("@babel/runtime-corejs2/core-js/json/stringify"));
+
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime-corejs2/helpers/classCallCheck"));
+
+var _createClass2 = _interopRequireDefault(require("@babel/runtime-corejs2/helpers/createClass"));
+
+var root = require('./tx');
+
+var amino = require('../amino');
+
+var config = require('../../../config');
 /**
  *
  *  用于编码/解码 cosmos-sdk识别的StdTx交易模型
@@ -14,7 +25,17 @@ const config = require('../../../config');
  *
  *
  */
-class TxSerializer {
+
+
+var TxSerializer =
+/*#__PURE__*/
+function () {
+  function TxSerializer() {
+    (0, _classCallCheck2["default"])(this, TxSerializer);
+  }
+
+  (0, _createClass2["default"])(TxSerializer, null, [{
+    key: "encode",
 
     /**
      * 对StdTx编码(勿动)
@@ -22,92 +43,91 @@ class TxSerializer {
      * @param object: StdTx
      * @returns {{data: Buffer, hash: string}}
      */
-    static encode(object) {
-        let txMsg = object.msgs[0];
-        let msg = txMsg.GetMsg();
-        let info = amino.GetRegisterInfo(txMsg.type);
-        let msgClass = info.classType;
+    value: function encode(object) {
+      var txMsg = object.msgs[0];
+      var msg = txMsg.GetMsg();
+      var info = amino.GetRegisterInfo(txMsg.type);
+      var msgClass = info.classType;
+      var sendMsg = msgClass.create(msg);
+      var msgBytes = msgClass.encode(sendMsg).finish();
+      var fee = object.fee;
+      var StdFee = root.irisnet.tx.StdFee;
+      var feeMsg = StdFee.create(fee);
+      var StdSignature = root.irisnet.tx.StdSignature;
+      var signature;
 
-        let sendMsg = msgClass.create(msg);
-        let msgBytes = msgClass.encode(sendMsg).finish();
+      if (object.signatures) {
+        signature = [StdSignature.create({
+          pubKey: object.signatures[0].pub_key,
+          signature: object.signatures[0].signature,
+          accountNumber: object.signatures[0].account_number,
+          sequence: object.signatures[0].sequence
+        })];
+      }
 
-        let fee = object.fee;
-        let StdFee = root.irisnet.tx.StdFee;
-        let feeMsg = StdFee.create(fee);
+      var memo = object.memo;
+      var StdTx = root.irisnet.tx.StdTx;
+      var tx = StdTx.create({
+        msgs: [msgBytes],
+        fee: feeMsg,
+        signatures: signature,
+        memo: memo
+      });
+      var txMsgBuf = StdTx.encode(tx).finish(); //stdTx amion编码前缀[auth/StdTx]
 
+      var txPreBuf = Buffer.from(amino.GetRegisterInfo(config.iris.tx.stdTx.prefix).prefix);
+      var msgPreBuf = Buffer.from(info.prefix);
+      var buf = Buffer.from(""); //填充stdTx amion编码前缀
 
-        let StdSignature = root.irisnet.tx.StdSignature;
-        let signature;
-        if (object.signatures) {
-            signature = [StdSignature.create({
-                pubKey: object.signatures[0].pub_key,
-                signature: object.signatures[0].signature,
-                accountNumber: object.signatures[0].account_number,
-                sequence: object.signatures[0].sequence
-            })];
-        }
+      buf = Buffer.concat([buf, txPreBuf]); //填充txMsgBuf第一位编码字节(数组标识)
 
-        let memo = object.memo;
+      buf = Buffer.concat([buf, txMsgBuf.slice(0, 1)]);
+      var uvintMsgBuf = EncodeUvarint(msgPreBuf.length + txMsgBuf[1]);
+      buf = Buffer.concat([buf, uvintMsgBuf]); //填充msg amion编码前缀
 
-        let StdTx = root.irisnet.tx.StdTx;
-        let tx = StdTx.create({msgs: [msgBytes], fee: feeMsg, signatures: signature, memo: memo});
-        let txMsgBuf = StdTx.encode(tx).finish();
+      buf = Buffer.concat([buf, msgPreBuf]); //填充交易内容字节
 
-        //stdTx amion编码前缀[auth/StdTx]
-        let txPreBuf = Buffer.from(amino.GetRegisterInfo(config.iris.tx.stdTx.prefix).prefix);
-        let msgPreBuf = Buffer.from(info.prefix);
+      buf = Buffer.concat([buf, txMsgBuf.slice(DecodeUvarint(txMsgBuf[1]) + 1)]);
+      var uvarintBuf = Buffer.from(EncodeUvarint(buf.length));
+      var bz = Buffer.concat([uvarintBuf, buf]);
 
-        let buf = Buffer.from("");
+      var crypto = require('crypto');
 
-        //填充stdTx amion编码前缀
-        buf = Buffer.concat([buf, txPreBuf]);
-
-        //填充txMsgBuf第一位编码字节(数组标识)
-        buf = Buffer.concat([buf, txMsgBuf.slice(0, 1)]);
-
-        let uvintMsgBuf = EncodeUvarint(msgPreBuf.length + txMsgBuf[1]);
-        buf = Buffer.concat([buf, uvintMsgBuf]);
-
-        //填充msg amion编码前缀
-        buf = Buffer.concat([buf, msgPreBuf]);
-
-        //填充交易内容字节
-        buf = Buffer.concat([buf, txMsgBuf.slice(DecodeUvarint(txMsgBuf[1]) + 1)]);
-
-        let uvarintBuf = Buffer.from(EncodeUvarint(buf.length));
-        let bz = Buffer.concat([uvarintBuf, buf]);
-
-        const crypto = require('crypto');
-        const hash = crypto.createHash('sha256');
-        console.log(JSON.stringify(bz));
-        hash.update(bz);
-        let hashTx = hash.digest('hex').substring(0, 64);
-
-        return {
-            data: bz,
-            hash: hashTx.toUpperCase()
-        }
+      var hash = crypto.createHash('sha256');
+      console.log((0, _stringify["default"])(bz));
+      hash.update(bz);
+      var hashTx = hash.digest('hex').substring(0, 64);
+      return {
+        data: bz,
+        hash: hashTx.toUpperCase()
+      };
     }
-}
+  }]);
+  return TxSerializer;
+}();
 
 function EncodeUvarint(u) {
-    let buf = Buffer.alloc(10);
-    let i = 0;
-    const BN = require("bn");
-    while (u >= 0x80) {
-        buf[i] = new BN(u).or(new BN(0x80));
-        u >>= 7;
-        i++;
-    }
-    buf[i] = new BN(u);
-    return buf.slice(0, i + 1);
+  var buf = Buffer.alloc(10);
+  var i = 0;
+
+  var BN = require("bn");
+
+  while (u >= 0x80) {
+    buf[i] = new BN(u).or(new BN(0x80));
+    u >>= 7;
+    i++;
+  }
+
+  buf[i] = new BN(u);
+  return buf.slice(0, i + 1);
 }
 
 function DecodeUvarint(u) {
-    if (u >= 0x80) {
-        return 2
-    }
-    return 1
+  if (u >= 0x80) {
+    return 2;
+  }
+
+  return 1;
 }
 
 module.exports = TxSerializer;

@@ -1,45 +1,63 @@
 'use strict';
 
-const Codec = require("../util/codec");
-const Sha256 = require("sha256");
-const Config = require('../config');
-const R_Cosmos = require('./cosmos/tx/tx');
-const R_Iris = require('./iris/tx/tx');
+var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
 
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime-corejs2/helpers/classCallCheck"));
+
+var _createClass2 = _interopRequireDefault(require("@babel/runtime-corejs2/helpers/createClass"));
+
+var Codec = require("../util/codec");
+
+var Sha256 = require("sha256");
+
+var Config = require('../config');
+
+var R_Cosmos = require('./cosmos/tx/tx');
+
+var R_Iris = require('./iris/tx/tx');
 /**
  * 处理amino编码（目前支持序列化）
  *
  */
-class Amino {
-    constructor() {
-        this._keyMap = {};
+
+
+var Amino =
+/*#__PURE__*/
+function () {
+  function Amino() {
+    (0, _classCallCheck2["default"])(this, Amino);
+    this._keyMap = {};
+  }
+  /**
+   */
+
+
+  (0, _createClass2["default"])(Amino, [{
+    key: "GetRegisterInfo",
+    value: function GetRegisterInfo(key) {
+      var info = this._keyMap[key];
+
+      if (info === undefined) {
+        throw new Error("not Registered");
+      }
+
+      return info;
     }
-
-    /**
-     */
-
-    GetRegisterInfo(key) {
-        let info = this._keyMap[key];
-        if (info === undefined) {
-            throw new Error("not Registered");
-        }
-        return info
-    }
-
     /**
      * 注册amino类型
      *
      * @param class field的类型
      * @param key amino前缀
      */
-    RegisterConcrete(type, key) {
 
-        this._keyMap[key] = {
-            prefix: this._aminoPrefix(key),
-            classType: type
-        }
+  }, {
+    key: "RegisterConcrete",
+    value: function RegisterConcrete(type, key) {
+      this._keyMap[key] = {
+        prefix: this._aminoPrefix(key),
+        classType: type
+      };
     }
-
     /**
      * 给消息加上amino前缀
      *
@@ -47,37 +65,49 @@ class Amino {
      * @param message 编码msg
      * @returns { Array }
      */
-    MarshalBinary(key, message) {
-        let prefixBytes = this._keyMap[key].prefix;
-        prefixBytes = Buffer.from(prefixBytes.concat(message.length));
-        prefixBytes = Buffer.concat([prefixBytes, message]);
-        return prefixBytes
-    }
 
-    MarshalJSON(key, message) {
-        let pair = {
-            "type": key,
-            "value": message
-        };
-        return pair
+  }, {
+    key: "MarshalBinary",
+    value: function MarshalBinary(key, message) {
+      var prefixBytes = this._keyMap[key].prefix;
+      prefixBytes = Buffer.from(prefixBytes.concat(message.length));
+      prefixBytes = Buffer.concat([prefixBytes, message]);
+      return prefixBytes;
     }
-
-    _aminoPrefix(name) {
-        let a = Sha256(name);
-        let b = Codec.Hex.hexToBytes(a);
-        while (b[0] === 0) {
-            b = b.slice(1, b.length - 1)
-        }
-        b = b.slice(3, b.length - 1);
-        while (b[0] === 0) {
-            b = b.slice(1, b.length - 1)
-        }
-        b = b.slice(0, 4);//注意和go-amino v0.6.2以前的不一样
-        return b
+  }, {
+    key: "MarshalJSON",
+    value: function MarshalJSON(key, message) {
+      var pair = {
+        "type": key,
+        "value": message
+      };
+      return pair;
     }
-}
+  }, {
+    key: "_aminoPrefix",
+    value: function _aminoPrefix(name) {
+      var a = Sha256(name);
+      var b = Codec.Hex.hexToBytes(a);
 
-let amino = new Amino();
+      while (b[0] === 0) {
+        b = b.slice(1, b.length - 1);
+      }
+
+      b = b.slice(3, b.length - 1);
+
+      while (b[0] === 0) {
+        b = b.slice(1, b.length - 1);
+      }
+
+      b = b.slice(0, 4); //注意和go-amino v0.6.2以前的不一样
+
+      return b;
+    }
+  }]);
+  return Amino;
+}();
+
+var amino = new Amino();
 amino.RegisterConcrete(null, Config.cosmos.amino.pubKey);
 amino.RegisterConcrete(null, Config.cosmos.amino.signature);
 amino.RegisterConcrete(R_Cosmos.cosmos.MsgDelegate, Config.cosmos.tx.delegate.prefix);
@@ -88,7 +118,6 @@ amino.RegisterConcrete(R_Cosmos.cosmos.MsgWithdrawValidatorCommission, Config.co
 amino.RegisterConcrete(R_Cosmos.cosmos.MsgUndelegate, Config.cosmos.tx.undelegate.prefix);
 amino.RegisterConcrete(R_Cosmos.cosmos.MsgBeginRedelegate, Config.cosmos.tx.beginRedelegate.prefix);
 amino.RegisterConcrete(R_Cosmos.cosmos.StdTx, Config.cosmos.tx.stdTx.prefix);
-
 amino.RegisterConcrete(null, Config.iris.amino.pubKey);
 amino.RegisterConcrete(null, Config.iris.amino.signature);
 amino.RegisterConcrete(R_Iris.irisnet.tx.MsgDelegate, Config.iris.tx.delegate.prefix);
